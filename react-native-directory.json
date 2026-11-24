@@ -1,16 +1,12 @@
 {
-  "_comment": "Entry for https://reactnative.directory — submit by PR'ing this object into react-native-libraries.json in react-native-community/directory. Requires janis-mobile to be published on npm first (npmPkg is validated against the registry).",
-  "githubUrl": "https://github.com/Janis-ai/janis/tree/master/packages/mobile",
+  "_comment": "Entry for https://reactnative.directory — submitted as PR react-native-community/directory#3042 (branch: mnatha/directory add-janis-mobile). Points at the PUBLIC mirror Janis-ai/janis-mobile — the monorepo stays private and the directory validates githubUrl against the public GitHub API. False values are stripped upstream, so only true flags are listed.",
+  "githubUrl": "https://github.com/Janis-ai/janis-mobile",
   "npmPkg": "janis-mobile",
+  "examples": [
+    "https://github.com/Janis-ai/janis-mobile/tree/main/example"
+  ],
   "ios": true,
   "android": true,
-  "web": false,
   "expoGo": true,
-  "newArchitecture": true,
-  "unmaintained": false,
-  "dev": false,
-  "template": false,
-  "examples": [
-    "https://github.com/Janis-ai/janis/tree/master/apps/mobile"
-  ]
+  "newArchitecture": true
 }

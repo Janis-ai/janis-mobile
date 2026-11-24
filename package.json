@@ -38,10 +38,9 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Janis-ai/janis.git",
-    "directory": "packages/mobile"
+    "url": "https://github.com/Janis-ai/janis-mobile.git"
   },
-  "bugs": "https://github.com/Janis-ai/janis/issues",
+  "bugs": "https://github.com/Janis-ai/janis-mobile/issues",
   "homepage": "https://janis.ai",
   "scripts": {
     "build": "tsc -p tsconfig.json",

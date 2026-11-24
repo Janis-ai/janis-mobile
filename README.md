@@ -1,5 +1,7 @@
 # janis-mobile
 
+[![npm](https://img.shields.io/npm/v/janis-mobile)](https://www.npmjs.com/package/janis-mobile)
+
 In-app [Janis](https://app.janis.ai) chat for React Native & Expo — drop a
 support chat into your app that answers with AI and hands off to humans
 when needed. One conversation, one transcript, across your app and every

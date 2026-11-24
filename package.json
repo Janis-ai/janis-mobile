@@ -26,6 +26,23 @@
     "access": "public"
   },
   "license": "MIT",
+  "keywords": [
+    "janis",
+    "react-native",
+    "expo",
+    "chat",
+    "live-chat",
+    "customer-support",
+    "chat-bubble",
+    "ai-agent"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Janis-ai/janis.git",
+    "directory": "packages/mobile"
+  },
+  "bugs": "https://github.com/Janis-ai/janis/issues",
+  "homepage": "https://janis.ai",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.test.json",

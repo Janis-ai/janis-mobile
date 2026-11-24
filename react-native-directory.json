@@ -1,0 +1,16 @@
+{
+  "_comment": "Entry for https://reactnative.directory — submit by PR'ing this object into react-native-libraries.json in react-native-community/directory. Requires janis-mobile to be published on npm first (npmPkg is validated against the registry).",
+  "githubUrl": "https://github.com/Janis-ai/janis/tree/master/packages/mobile",
+  "npmPkg": "janis-mobile",
+  "ios": true,
+  "android": true,
+  "web": false,
+  "expoGo": true,
+  "newArchitecture": true,
+  "unmaintained": false,
+  "dev": false,
+  "template": false,
+  "examples": [
+    "https://github.com/Janis-ai/janis/tree/master/apps/mobile"
+  ]
+}

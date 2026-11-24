@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import {
+  Animated,
   Image,
   Linking,
   Platform,
@@ -55,6 +56,8 @@ export interface ChatBubbleProps extends Omit<ChatViewProps, 'style'> {
   showLauncher?: boolean;
   /** Custom launcher content — replaces the config-resolved icon. */
   launcherIcon?: ReactNode;
+  /** Custom minimize-button content — defaults to the ⌄ chevron. */
+  minimizeIcon?: ReactNode;
   /** Bottom offset — clear a tab bar or home indicator. Default 24. */
   offset?: number;
   /** Horizontal edge margin for the launcher and anchored window.
@@ -114,22 +117,30 @@ const glyph = StyleSheet.create({
   },
 });
 
+/** A rotated square's bottom-right corner reads as a clean ⌄ — one
+ * crisp stroke with a rounded tip, instead of two bars that look
+ * clipped where they almost meet. */
 function ChevronDown({ color, size = 16 }: { color: string; size?: number }) {
-  const bar = {
-    position: 'absolute' as const,
-    top: size / 2 - 1,
-    width: size / 2 + 2,
-    height: 2.5,
-    borderRadius: 2,
-    backgroundColor: color,
-  };
   return (
-    <View style={{ width: size, height: size }}>
-      <View style={[bar, { left: -1, transform: [{ rotate: '45deg' }] }]} />
-      <View style={[bar, { right: -1, transform: [{ rotate: '-45deg' }] }]} />
+    <View style={chev.wrap}>
+      <View
+        style={{
+          width: size * 0.6,
+          height: size * 0.6,
+          borderRightWidth: 2.2,
+          borderBottomWidth: 2.2,
+          borderColor: color,
+          borderBottomRightRadius: 2,
+          transform: [{ rotate: '45deg' }, { translateY: -size * 0.14 }],
+        }}
+      />
     </View>
   );
 }
+
+const chev = StyleSheet.create({
+  wrap: { width: 16, height: 16, alignItems: 'center', justifyContent: 'center' },
+});
 
 /**
  * Intercom-style floating launcher + chat window, styled by the channel's
@@ -153,6 +164,7 @@ export const ChatBubble = forwardRef<ChatBubbleHandle, ChatBubbleProps>(function
     position: positionProp,
     presentation: presentationProp,
     launcherIcon,
+    minimizeIcon,
     offset = 24,
     edgeOffset = 20,
     size = 56,
@@ -220,6 +232,33 @@ export const ChatBubble = forwardRef<ChatBubbleHandle, ChatBubbleProps>(function
     }),
     [isOpen, controlledOpen],
   );
+
+  // Open/close animation — the window stays mounted through the close
+  // tween. Sheets slide up from below, the anchored card lifts + fades.
+  // Starting open (auto default) paints immediately — no entry motion.
+  const [mounted, setMounted] = useState(isOpen);
+  const anim = useRef(new Animated.Value(isOpen ? 1 : 0)).current;
+  useEffect(() => {
+    if (isOpen) {
+      setMounted(true);
+      Animated.spring(anim, {
+        toValue: 1,
+        useNativeDriver: true,
+        damping: 26,
+        stiffness: 260,
+        mass: 0.9,
+      }).start();
+    } else {
+      Animated.timing(anim, {
+        toValue: 0,
+        duration: 160,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        // A reopen mid-close stops this tween — only unmount on completion.
+        if (finished) setMounted(false);
+      });
+    }
+  }, [isOpen, anim]);
 
   // Unread tracking — while open, the newest confirmed message is "seen";
   // while closed, later agent-side messages count toward the badge.
@@ -319,7 +358,7 @@ export const ChatBubble = forwardRef<ChatBubbleHandle, ChatBubbleProps>(function
         onPress={() => setOpen(false)}
         testID="janis-minimize"
       >
-        <ChevronDown color={theme.muted} />
+        {minimizeIcon ?? <ChevronDown color={theme.muted} />}
       </Pressable>
     </View>
   );
@@ -368,23 +407,30 @@ export const ChatBubble = forwardRef<ChatBubbleHandle, ChatBubbleProps>(function
     </View>
   );
 
-  const window = isOpen ? (
+  const window = mounted ? (
     presentation === 'modal' ? (
       <>
-        <Pressable style={styles.backdrop} onPress={() => setOpen(false)} />
-        <View
+        <Animated.View style={[styles.backdrop, { opacity: anim }]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setOpen(false)} />
+        </Animated.View>
+        <Animated.View
           style={[
             styles.sheet,
             { backgroundColor: theme.background, borderColor: theme.border },
+            {
+              transform: [
+                { translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [winH, 0] }) },
+              ],
+            },
             windowStyle,
           ]}
         >
           {header}
           <ChatView {...chatViewProps} chat={j.store} theme={props.theme} accent={props.accent} scheme={scheme} />
-        </View>
+        </Animated.View>
       </>
     ) : (
-      <View
+      <Animated.View
         style={[
           styles.window,
           {
@@ -392,6 +438,11 @@ export const ChatBubble = forwardRef<ChatBubbleHandle, ChatBubbleProps>(function
             height: windowHeight,
             backgroundColor: theme.background,
             borderColor: theme.border,
+            opacity: anim,
+            transform: [
+              { translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [32, 0] }) },
+              { scale: anim.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] }) },
+            ],
           },
           side === 'left' ? { left: edgeOffset } : { right: edgeOffset },
           windowStyle,
@@ -399,7 +450,7 @@ export const ChatBubble = forwardRef<ChatBubbleHandle, ChatBubbleProps>(function
       >
         {header}
         <ChatView {...chatViewProps} chat={j.store} theme={props.theme} accent={props.accent} scheme={scheme} />
-      </View>
+      </Animated.View>
     )
   ) : null;
 
@@ -479,6 +530,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderBottomWidth: 0,
+    // The overlay ignores the host's safe-area padding — keep the
+    // composer + powered-by clear of the home-gesture zone.
+    paddingBottom: 28,
   },
   window: {
     position: 'absolute',

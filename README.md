@@ -56,6 +56,7 @@ const ref = useRef<ChatBubbleHandle>(null);
   presentation="bubble"   // pin the anchored card on every device
   defaultOpen={false}     // pin collapsed everywhere ('auto' is default)
   showLauncher={false}    // your own trigger — drive via ref or `open`
+  minimizeIcon={<Icon />} // replace the ⌄ header button glyph
   onOpenChange={(o) => track(o ? 'chat_opened' : 'chat_minimized')}
 />
 ref.current.open(); ref.current.minimize(); ref.current.toggle();

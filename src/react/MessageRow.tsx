@@ -20,6 +20,13 @@ type CardsWidget = Extract<ChatWidget, { type: 'cards' }>;
 export interface MessageRowProps {
   message: UiMessage;
   theme: ChatTheme;
+  /** Sender label — shown when this row opens a run of same-author
+   * bubbles (ChatView computes run grouping). */
+  author?: { name: string; avatar?: string | null } | null;
+  /** Short time appended to the author label ("3:42 PM"). */
+  when?: string;
+  /** "Delivered · <time>" receipt under the bubble. */
+  delivered?: string;
   onRetry(clientId: string): void;
   /** A string chip tap — sent as a component tap. */
   onQuickReply(text: string): void;
@@ -241,6 +248,9 @@ function CardsWidgetView({
 export function MessageRow({
   message: m,
   theme,
+  author,
+  when,
+  delivered,
   onRetry,
   onQuickReply,
   onContactSubmit,
@@ -284,10 +294,21 @@ export function MessageRow({
 
   return (
     <View style={[styles.row, isUser ? styles.rowUser : styles.rowAgent]}>
-      {m.direction === 'human' && m.author?.name ? (
-        <Text style={[styles.author, { color: theme.muted }]}>{m.author.name}</Text>
+      {author ? (
+        <View style={styles.authorRow}>
+          {author.avatar ? (
+            <Image source={{ uri: author.avatar }} style={styles.authorImg} />
+          ) : null}
+          <Text style={[styles.author, { color: theme.muted }]}>
+            {author.name}
+            {when ? ` · ${when}` : ''}
+          </Text>
+        </View>
       ) : null}
       {m.text || (m.attachments?.length ?? 0) > 0 || m.failed ? bubble : null}
+      {delivered ? (
+        <Text style={[styles.delivered, { color: theme.muted }]}>{delivered}</Text>
+      ) : null}
       {widgets.map((w, i) => {
         if (w.type === 'options' && Array.isArray(w.items))
           return (
@@ -325,7 +346,16 @@ const styles = StyleSheet.create({
   row: { marginVertical: 3, paddingHorizontal: 12 },
   rowUser: { alignItems: 'flex-end' },
   rowAgent: { alignItems: 'flex-start' },
-  author: { fontSize: 11, marginBottom: 2, marginLeft: 6 },
+  author: { fontSize: 11 },
+  authorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+    marginLeft: 6,
+    marginRight: 6,
+  },
+  authorImg: { width: 18, height: 18, borderRadius: 9, marginRight: 5 },
+  delivered: { fontSize: 11, marginTop: 2, marginRight: 6 },
   bubble: { maxWidth: '82%', paddingHorizontal: 13, paddingVertical: 9 },
   bubbleUser: { borderBottomRightRadius: 4 },
   bubbleAgent: { borderBottomLeftRadius: 4 },

@@ -5,6 +5,7 @@ export type { ChatStoreOptions, StoreState, UiMessage } from './store.js';
 export { parseBlocks, splitTrail } from './markdown.js';
 export type { Block, InlineRun } from './markdown.js';
 export { demojize } from './emoji.js';
+export { authorFor, authorKey, formatTime, startsAuthorRun } from './messageMeta.js';
 export { randId } from './id.js';
 export type {
   Attachment,

@@ -15,7 +15,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 import type { JanisChatOptions } from '../client.js';
-import { JanisChat } from '../client.js';
+import { absoluteUrl, JanisChat } from '../client.js';
+import { authorFor, formatTime, startsAuthorRun } from '../messageMeta.js';
 import { ChatStore, type ChatStoreOptions, type UiMessage } from '../store.js';
 import type { UploadFile } from '../types.js';
 import { Composer } from './Composer.js';
@@ -99,6 +100,31 @@ export function ChatView(props: ChatViewProps) {
   const typing = j.agentTyping || j.operatorTyping;
   const ended = j.state === 'archived';
 
+  // Delivered receipt rides the newest confirmed visitor message — like
+  // iMessage, it stays put even after replies until the next send lands.
+  const deliveredId = useMemo(
+    () => data.find((m) => m.direction === 'in' && !m.pending && !m.failed)?.id,
+    [data],
+  );
+  const agent = {
+    name: j.config?.agent_name,
+    avatar: absoluteUrl(j.chat.baseUrl, j.config?.logo_url),
+  };
+  const metaFor = (item: UiMessage, index: number) => ({
+    // data is newest-first — the chronological predecessor is index+1.
+    // Operator avatars can arrive as relative /uploads/… paths too.
+    author: (() => {
+      if (!startsAuthorRun(item, data[index + 1])) return null;
+      const a = authorFor(item, agent);
+      return a ? { ...a, avatar: absoluteUrl(j.chat.baseUrl, a.avatar) } : null;
+    })(),
+    // The synthetic greeting carries epoch time — show the label, skip
+    // the stamp.
+    when: item.greeting ? undefined : formatTime(item.created_at) || undefined,
+    delivered:
+      item.id === deliveredId ? `Delivered${formatTime(item.created_at) ? ` · ${formatTime(item.created_at)}` : ''}` : undefined,
+  });
+
   const handleAttach = () => {
     void Promise.resolve(props.onAttach?.())
       .then((picked) => {
@@ -146,13 +172,14 @@ export function ChatView(props: ChatViewProps) {
         inverted
         data={data}
         keyExtractor={(m) => m.id}
-        renderItem={({ item }) =>
+        renderItem={({ item, index }) =>
           props.renderMessage ? (
             props.renderMessage(item)
           ) : (
             <MessageRow
               message={item}
               theme={theme}
+              {...metaFor(item, index)}
               onRetry={(id) => void j.retry(id)}
               onQuickReply={(t) => void j.sendQuickReply(t)}
               onContactSubmit={(v) => void j.send(v)}

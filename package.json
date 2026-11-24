@@ -1,7 +1,7 @@
 {
   "name": "janis-mobile",
-  "version": "0.1.0",
-  "description": "Janis in-app chat for React Native & Expo — AI answers, human takeover, one conversation",
+  "version": "0.1.1",
+  "description": "Janis in-app chat for React Native & Expo \u2014 AI answers, human takeover, one conversation",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

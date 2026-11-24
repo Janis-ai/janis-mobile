@@ -426,7 +426,7 @@ export const ChatBubble = forwardRef<ChatBubbleHandle, ChatBubbleProps>(function
           ]}
         >
           {header}
-          <ChatView {...chatViewProps} chat={j.store} theme={props.theme} accent={props.accent} scheme={scheme} />
+          <ChatView {...chatViewProps} chat={j.store} theme={props.theme} accent={props.accent} scheme={scheme} bottomInset={SHEET_PAD} />
         </Animated.View>
       </>
     ) : (
@@ -449,7 +449,7 @@ export const ChatBubble = forwardRef<ChatBubbleHandle, ChatBubbleProps>(function
         ]}
       >
         {header}
-        <ChatView {...chatViewProps} chat={j.store} theme={props.theme} accent={props.accent} scheme={scheme} />
+        <ChatView {...chatViewProps} chat={j.store} theme={props.theme} accent={props.accent} scheme={scheme} bottomInset={offset + (showLauncher ? size + 10 : 0)} />
       </Animated.View>
     )
   ) : null;
@@ -461,6 +461,11 @@ export const ChatBubble = forwardRef<ChatBubbleHandle, ChatBubbleProps>(function
     </View>
   );
 });
+
+// The overlay ignores the host's safe-area padding — keep the composer +
+// powered-by clear of the home-gesture zone (replaced by the keyboard
+// lift while typing).
+const SHEET_PAD = 28;
 
 const styles = StyleSheet.create({
   launcherWrap: {
@@ -530,9 +535,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderBottomWidth: 0,
-    // The overlay ignores the host's safe-area padding — keep the
-    // composer + powered-by clear of the home-gesture zone.
-    paddingBottom: 28,
+    paddingBottom: SHEET_PAD,
   },
   window: {
     position: 'absolute',

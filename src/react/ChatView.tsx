@@ -1,8 +1,10 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   ActivityIndicator,
+  Animated,
+  Easing,
   FlatList,
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
   Pressable,
   StyleSheet,
@@ -36,6 +38,13 @@ export interface ChatViewProps {
   placeholder?: string;
   style?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;
+  /** Distance the view's bottom edge already sits above the bottom of
+   * the screen — the composer lifts by keyboard height minus this.
+   * ChatBubble sets it (sheet padding / launcher offset); standalone
+   * hosts with a bottom tab bar can pass its height. Default 0. */
+  bottomInset?: number;
+  /** Extra lift added on top of the keyboard height (same direction
+   * as RN's KeyboardAvoidingView prop — for a header above the view). */
   keyboardVerticalOffset?: number;
   /** Attach button handler — return a picked file to upload+send, or
    * null/undefined when the picker was cancelled. Wire your picker here
@@ -98,11 +107,40 @@ export function ChatView(props: ChatViewProps) {
       .catch(() => {});
   };
 
+  // Keyboard lift driven by the event's own height — KeyboardAvoidingView
+  // measures the view's screen frame, which under-reports inside the
+  // absolutely-positioned ChatBubble overlay (composer ends up half
+  // under the keyboard). bottomInset = space the view bottom already
+  // clears (sheet padding, launcher offset); Android resizes the window
+  // itself, so no lift there.
+  const kbPad = useRef(new Animated.Value(0)).current;
+  const liftInset = (props.bottomInset ?? 0) - (props.keyboardVerticalOffset ?? 0);
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+    const lift = (toValue: number, duration = 250) =>
+      Animated.timing(kbPad, {
+        toValue,
+        duration,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: false,
+      }).start();
+    const show = Keyboard.addListener('keyboardWillShow', (e) =>
+      lift(Math.max(e.endCoordinates.height - liftInset, 0), e.duration),
+    );
+    const hide = Keyboard.addListener('keyboardWillHide', (e) => lift(0, e.duration));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, [kbPad, liftInset]);
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={props.keyboardVerticalOffset ?? 0}
-      style={[styles.root, { backgroundColor: theme.background }, props.style]}
+    <Animated.View
+      style={[
+        styles.root,
+        { backgroundColor: theme.background, paddingBottom: kbPad },
+        props.style,
+      ]}
     >
       <FlatList
         inverted
@@ -169,7 +207,7 @@ export function ChatView(props: ChatViewProps) {
           Powered by Janis
         </Text>
       ) : null}
-    </KeyboardAvoidingView>
+    </Animated.View>
   );
 }
 

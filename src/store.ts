@@ -126,15 +126,31 @@ export class ChatStore {
   async start(): Promise<void> {
     if (this.running) return;
     this.running = true;
-    if (this.loadConfigFlag && !this.config) {
-      try {
-        this.config = await this.chat.config();
-      } catch {
-        /* branding is cosmetic — don't block the transcript on it */
-      }
-    }
+    await this.loadConfig();
     await this.refresh();
     this.scheduleNext(this.intervalMs);
+  }
+
+  /** Bootstrap config — branding gates the bubble's first paint, so a
+   * failed fetch retries on every poll rather than staying unstyled. */
+  private configLoading?: Promise<void>;
+  private loadConfig(): Promise<void> {
+    if (!this.loadConfigFlag || this.config) return Promise.resolve();
+    if (!this.configLoading) {
+      this.configLoading = this.chat
+        .config()
+        .then((c) => {
+          this.config = c;
+          this.emit();
+        })
+        .catch(() => {
+          /* retried on the next poll */
+        })
+        .finally(() => {
+          this.configLoading = undefined;
+        });
+    }
+    return this.configLoading;
   }
 
   stop(): void {
@@ -159,6 +175,7 @@ export class ChatStore {
       return;
     }
     this.refreshing = true;
+    void this.loadConfig();
     try {
       do {
         this.refreshQueued = false;

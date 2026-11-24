@@ -46,8 +46,11 @@ export interface ChatBubbleProps extends Omit<ChatViewProps, 'style'> {
   presentation?: 'bubble' | 'modal';
   /** Custom launcher content — replaces the config-resolved icon. */
   launcherIcon?: ReactNode;
-  /** Bottom offset — clear a tab bar or home indicator. Default 16. */
+  /** Bottom offset — clear a tab bar or home indicator. Default 24. */
   offset?: number;
+  /** Horizontal edge margin for the launcher and anchored window.
+   * Default 20. */
+  edgeOffset?: number;
   /** Launcher diameter. Default 56. */
   size?: number;
   /** Unread count badge on the launcher. Default true. */
@@ -141,7 +144,8 @@ export const ChatBubble = forwardRef<ChatBubbleHandle, ChatBubbleProps>(function
     position: positionProp,
     presentation: presentationProp,
     launcherIcon,
-    offset = 16,
+    offset = 24,
+    edgeOffset = 20,
     size = 56,
     showUnreadBadge = true,
     showTeaser = true,
@@ -248,6 +252,11 @@ export const ChatBubble = forwardRef<ChatBubbleHandle, ChatBubbleProps>(function
           : cfg?.subtitle || 'AI answers, humans when needed';
   const helpUrl = cfg?.help_url && cfg?.show_help_link !== false ? cfg.help_url : null;
 
+  // Branding gates first paint — render nothing until the channel config
+  // lands so the launcher never flashes default colors/icon. The store
+  // keeps polling (and retrying the config fetch) while we're hidden.
+  if (!cfg) return null;
+
   const header = (
     <View
       style={[
@@ -300,7 +309,7 @@ export const ChatBubble = forwardRef<ChatBubbleHandle, ChatBubbleProps>(function
   );
 
   const side = position === 'left' ? 'left' : 'right';
-  const sideProp = { [side]: 12 } as ViewStyle;
+  const sideProp = { [side]: edgeOffset } as ViewStyle;
   const launcher = (
     <View style={[styles.launcherWrap, { bottom: offset }, sideProp]} pointerEvents="box-none">
       {teaser ? (
@@ -368,7 +377,7 @@ export const ChatBubble = forwardRef<ChatBubbleHandle, ChatBubbleProps>(function
             backgroundColor: theme.background,
             borderColor: theme.border,
           },
-          side === 'left' ? { left: 12 } : { right: 12 },
+          side === 'left' ? { left: edgeOffset } : { right: edgeOffset },
           windowStyle,
         ]}
       >

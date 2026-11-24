@@ -9,14 +9,17 @@ import {
 import {
   Image,
   Linking,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   useColorScheme,
+  useWindowDimensions,
   View,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { isTabletDevice, resolveDefaultOpen, resolvePresentation, type BubblePresentation } from '../bubbleDefaults.js';
 import { absoluteUrl, JanisChat } from '../client.js';
 import type { JanisChatOptions } from '../client.js';
 import { ChatStore, countUnread, type ChatStoreOptions } from '../store.js';
@@ -34,16 +37,22 @@ export interface ChatBubbleHandle {
 export interface ChatBubbleProps extends Omit<ChatViewProps, 'style'> {
   /** Controlled open state — pair with onOpenChange. */
   open?: boolean;
-  /** Initial open state when uncontrolled. The channel's open_default
-   * applies when neither is set (once — honoring it forever would fight
-   * the visitor's minimize). */
-  defaultOpen?: boolean;
+  /** Initial open state when uncontrolled. 'auto' (default) opens
+   * maximized on phones and stays collapsed to the launcher on tablets,
+   * where the channel's open_default applies (once — honoring it forever
+   * would fight the visitor's minimize). A boolean pins it everywhere. */
+  defaultOpen?: boolean | 'auto';
   onOpenChange?(open: boolean): void;
   /** Corner — default: the channel's configured position. */
   position?: 'left' | 'right';
-  /** 'bubble' = card anchored over the launcher; 'modal' = bottom sheet
-   * on a dimmed backdrop. Default: the channel's display setting. */
-  presentation?: 'bubble' | 'modal';
+  /** 'auto' (default) maximizes to a sheet on phones and follows the
+   * channel's display setting on tablets. 'bubble' = card anchored over
+   * the launcher; 'modal' = bottom sheet on a dimmed backdrop. */
+  presentation?: BubblePresentation;
+  /** The floating launcher icon. Set false when the host app has its own
+   * chat trigger — drive open state via the ref or `open` prop (and it
+   * starts open by default, since there's no other way in). Default true. */
+  showLauncher?: boolean;
   /** Custom launcher content — replaces the config-resolved icon. */
   launcherIcon?: ReactNode;
   /** Bottom offset — clear a tab bar or home indicator. Default 24. */
@@ -147,6 +156,7 @@ export const ChatBubble = forwardRef<ChatBubbleHandle, ChatBubbleProps>(function
     offset = 24,
     edgeOffset = 20,
     size = 56,
+    showLauncher = true,
     showUnreadBadge = true,
     showTeaser = true,
     launcherStyle,
@@ -166,10 +176,16 @@ export const ChatBubble = forwardRef<ChatBubbleHandle, ChatBubbleProps>(function
   const theme = defaultTheme(props.accent ?? (cfg?.accent as string | null), props.theme, scheme);
 
   const position = positionProp ?? cfg?.position ?? 'right';
-  const presentation =
-    presentationProp ?? (cfg?.display === 'modal' ? 'modal' : 'bubble');
+  const { width: winW, height: winH } = useWindowDimensions();
+  const isTablet = isTabletDevice(
+    Platform.OS === 'ios' && Platform.isPad === true,
+    Math.min(winW, winH),
+  );
+  const presentation = resolvePresentation(presentationProp, isTablet, cfg?.display);
 
-  const [internalOpen, setInternalOpen] = useState(defaultOpen ?? false);
+  const [internalOpen, setInternalOpen] = useState(() =>
+    resolveDefaultOpen(defaultOpen, showLauncher, isTablet),
+  );
   const isOpen = controlledOpen ?? internalOpen;
   const openedOnce = useRef(isOpen);
   const autoOpened = useRef(false);
@@ -184,7 +200,7 @@ export const ChatBubble = forwardRef<ChatBubbleHandle, ChatBubbleProps>(function
   useEffect(() => {
     if (
       controlledOpen === undefined &&
-      defaultOpen === undefined &&
+      (defaultOpen === undefined || defaultOpen === 'auto') &&
       cfg?.open_default === true &&
       !autoOpened.current
     ) {
@@ -372,7 +388,7 @@ export const ChatBubble = forwardRef<ChatBubbleHandle, ChatBubbleProps>(function
         style={[
           styles.window,
           {
-            bottom: offset + size + 10,
+            bottom: offset + (showLauncher ? size + 10 : 0),
             height: windowHeight,
             backgroundColor: theme.background,
             borderColor: theme.border,
@@ -390,7 +406,7 @@ export const ChatBubble = forwardRef<ChatBubbleHandle, ChatBubbleProps>(function
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
       {window}
-      {presentation === 'bubble' || !isOpen ? launcher : null}
+      {showLauncher && (presentation === 'bubble' || !isOpen) ? launcher : null}
     </View>
   );
 });

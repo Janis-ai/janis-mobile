@@ -1,5 +1,6 @@
 export { ChatBubble } from './ChatBubble.js';
 export type { ChatBubbleHandle, ChatBubbleProps } from './ChatBubble.js';
+export type { BubblePresentation } from '../bubbleDefaults.js';
 export { countUnread } from '../store.js';
 export { ChatView } from './ChatView.js';
 export type { ChatViewProps } from './ChatView.js';

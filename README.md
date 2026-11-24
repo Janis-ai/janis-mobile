@@ -42,16 +42,28 @@ logo, launcher (`glyph`/`logo`/custom image), `position`, `display`
 (`bubble` card vs `modal` sheet), `open_default`, `theme`
 (light/dark/match-OS), `help_url`, `hide_powered_by`, proactive teaser.
 
+Device-adaptive defaults: phones open maximized (a bottom sheet — a
+floating card reads badly on small screens); tablets stay collapsed to
+the launcher and follow the channel's `display`/`open_default`. Nothing
+paints until the channel config lands, so branding never flashes.
+
 ```tsx
 const ref = useRef<ChatBubbleHandle>(null);
 <ChatBubble
   ref={ref}
   chat={chat}
   offset={64}             // clear a tab bar
+  presentation="bubble"   // pin the anchored card on every device
+  defaultOpen={false}     // pin collapsed everywhere ('auto' is default)
+  showLauncher={false}    // your own trigger — drive via ref or `open`
   onOpenChange={(o) => track(o ? 'chat_opened' : 'chat_minimized')}
 />
 ref.current.open(); ref.current.minimize(); ref.current.toggle();
 ```
+
+With `showLauncher={false}` there's no floating icon — the chat starts
+open and your own button/link calls `ref.current.open()` (or bind the
+controlled `open` prop).
 
 Or a full-screen chat route instead — `ChatView` is the same window
 content without the launcher:

@@ -2,6 +2,9 @@ export { JanisChat, JanisApiError } from './client.js';
 export type { JanisChatOptions } from './client.js';
 export { ChatStore, countUnread } from './store.js';
 export type { ChatStoreOptions, StoreState, UiMessage } from './store.js';
+export { parseBlocks, splitTrail } from './markdown.js';
+export type { Block, InlineRun } from './markdown.js';
+export { demojize } from './emoji.js';
 export { randId } from './id.js';
 export type {
   Attachment,

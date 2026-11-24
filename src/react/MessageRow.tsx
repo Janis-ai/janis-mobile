@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import type { UiMessage } from '../store.js';
 import type { Attachment, ChatWidget, QuickReply } from '../types.js';
+import { MessageText } from './MessageText.js';
 import type { ChatTheme } from './theme.js';
 
 type OptionsWidget = Extract<ChatWidget, { type: 'options' }>;
@@ -261,9 +262,12 @@ export function MessageRow({
       ]}
     >
       {m.text ? (
-        <Text style={{ color: isUser ? theme.userText : theme.agentText, fontSize: 15, lineHeight: 21 }}>
-          {m.text}
-        </Text>
+        <MessageText
+          text={m.text}
+          color={isUser ? theme.userText : theme.agentText}
+          linkColor={isUser ? theme.userText : theme.accent}
+          theme={theme}
+        />
       ) : null}
       {(m.attachments ?? []).map((a, i) => (
         <AttachmentView key={i} a={a} theme={theme} />

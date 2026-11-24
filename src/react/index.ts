@@ -7,6 +7,8 @@ export { Composer } from './Composer.js';
 export type { ComposerProps } from './Composer.js';
 export { MessageRow } from './MessageRow.js';
 export type { MessageRowProps } from './MessageRow.js';
+export { MessageText } from './MessageText.js';
+export type { MessageTextProps } from './MessageText.js';
 export { TypingDots } from './TypingDots.js';
 export { defaultTheme } from './theme.js';
 export type { ChatTheme } from './theme.js';

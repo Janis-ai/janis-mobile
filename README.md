@@ -126,8 +126,15 @@ new ChatStore(chat, { eventSource: EventSource });
 `useJanisChat` gives you the full store API; `ChatView` accepts
 `renderMessage` per-row overrides, `onAttach` (wire any picker — the
 returned `{uri,name,type}` uploads and sends), `emptyState`, theming, and
-`endedText`/`newChatLabel` copy. Lower still, `MessageRow`, `Composer`,
-and `TypingDots` are exported individually.
+`endedText`/`newChatLabel` copy. Lower still, `MessageRow`, `MessageText`,
+`Composer`, and `TypingDots` are exported individually.
+
+Message text renders the same markdown-ish format as the web Bubble —
+`**bold**`, `*italic*`, `~~strike~~`, `` `code` ``, `[label](url)` and
+bare-URL links, `![alt](url)` inline images (gif embeds), `:shortcode:`
+emoji, bullet/numbered lists, and `#` headers demoted to bold lines. The
+parser (`parseBlocks`/`splitTrail`/`demojize`) is exported from the
+`janis-mobile` entry for custom renderers.
 
 ## Attachments
 

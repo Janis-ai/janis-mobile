@@ -1,5 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { JanisApiError, JanisChat } from './client.js';
+
+/** Node's FormData is winter-style like expo/fetch's — {uri} upload
+ * files take the XHR→Blob path, so tests stub a one-shot XHR. */
+class FakeXHR {
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  responseType = '';
+  response = new Blob(['img'], { type: 'image/png', lastModified: 0 });
+  open() {}
+  send() {
+    this.onload?.();
+  }
+}
+beforeEach(() => vi.stubGlobal('XMLHttpRequest', FakeXHR));
+afterEach(() => vi.unstubAllGlobals());
 
 type FakeReq = { method: string; url: string; body?: unknown; headers: Headers };
 
@@ -179,7 +194,24 @@ describe('JanisChat', () => {
     expect(calls[0].method).toBe('POST');
     const fd = calls[0].body as unknown as { get(k: string): unknown };
     expect(fd.get('visitor_id')).toBe('v_test_visitor_123');
-    expect(fd.get('file')).toBeTruthy();
+    const part = fd.get('file') as { name?: string };
+    expect(part?.name).toBe('pic.png');
+  });
+
+  it('upload() blobs a {uri} file when the runtime FormData is winter-style', async () => {
+    // expo/fetch's FormData (entries()) rejects {uri} parts — the SDK
+    // reads the file via XHR into a Blob instead.
+    const { fetchImpl, calls } = fakeFetch(() => ({
+      status: 201,
+      json: { name: 'pic.png', url: '/uploads/pic.png', type: 'image/png', size: 3 },
+    }));
+    const chat = new JanisChat({ ...chatOpts, fetch: fetchImpl });
+    await chat.upload({ uri: 'file:///tmp/pic.png', name: 'pic.png', type: 'image/png' });
+    const fd = calls[0].body as unknown as { get(k: string): unknown };
+    const part = fd.get('file') as Blob & { name?: string };
+    expect(part).toBeInstanceOf(Blob);
+    expect(part.type).toBe('image/png');
+    expect(part.name).toBe('pic.png');
   });
 
   it('eventsUrl() carries visitor + identity params', async () => {

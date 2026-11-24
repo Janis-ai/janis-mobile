@@ -55,6 +55,58 @@ export function absoluteUrl(baseUrl: string, url: string | null | undefined): st
   return url.startsWith('/') ? `${baseUrl}${url}` : url;
 }
 
+/** Read a local file into a Blob. React Native's fetch can't load
+ * file:///content:// picker URIs, but XHR can — the long-standing way
+ * the ecosystem blobs picker results. */
+function uriToBlob(uri: string): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.onload = () => resolve(xhr.response as Blob);
+    xhr.onerror = () => reject(new JanisApiError(0, 'could not read the file for upload'));
+    xhr.responseType = 'blob';
+    xhr.open('GET', uri);
+    xhr.send(null);
+  });
+}
+
+/** Append an UploadFile part in the shape the runtime's FormData
+ * serialization accepts. expo/fetch serializes in JS (it patches
+ * entries() onto RN's FormData) and only takes string|Blob|{bytes()}
+ * parts — the RN {uri} convention throws at send time, so URIs get
+ * blobbed. Stock RN FormData has no entries() and streams {uri} parts
+ * natively. */
+async function appendFilePart(
+  fd: FormData,
+  name: string,
+  file: UploadFile,
+  fallbackName: string,
+): Promise<void> {
+  const f = file as { uri?: string; name?: string; type?: string };
+  const winter = typeof (fd as { entries?: unknown }).entries === 'function';
+  if (typeof f.uri === 'string' && !winter) {
+    fd.append(name, {
+      uri: f.uri,
+      name: f.name ?? fallbackName,
+      type: f.type ?? 'application/octet-stream',
+    } as unknown as Blob);
+    return;
+  }
+  let blob: Blob;
+  if (typeof f.uri === 'string') {
+    blob = await uriToBlob(f.uri);
+    if (f.type && blob.type !== f.type) blob = blob.slice(0, blob.size, f.type);
+  } else {
+    blob = file as unknown as Blob;
+  }
+  // RN's FormData type only declares 2-arg append; runtimes accept
+  // (name, blob, filename) like the web.
+  (fd.append as (n: string, v: unknown, filename?: string) => void)(
+    name,
+    blob,
+    f.name ?? fallbackName,
+  );
+}
+
 const memoryStorage: VisitorStorage = (() => {
   const map = new Map<string, string>();
   return {
@@ -272,22 +324,7 @@ export class JanisChat {
     await this.ready;
     const fd = new FormData();
     fd.append('visitor_id', this.visitorId);
-    const f = file as { uri?: string; name?: string; type?: string };
-    if (typeof f.uri === 'string') {
-      fd.append('file', {
-        uri: f.uri,
-        name: f.name ?? 'upload',
-        type: f.type ?? 'application/octet-stream',
-      } as unknown as Blob);
-    } else {
-      // RN's FormData type only declares 2-arg append; runtimes accept
-      // (name, blob, filename) like the web.
-      (fd.append as (n: string, v: unknown, filename?: string) => void)(
-        'file',
-        file,
-        f.name ?? 'upload',
-      );
-    }
+    await appendFilePart(fd, 'file', file, 'upload');
     const res = await this.fetchImpl(this.url('/uploads'), {
       method: 'POST',
       headers: { ...this.headers },
@@ -306,7 +343,7 @@ export class JanisChat {
   async transcribe(audio: UploadFile): Promise<string> {
     await this.ready;
     const fd = new FormData();
-    fd.append('audio', audio as unknown as Blob);
+    await appendFilePart(fd, 'audio', audio, 'audio');
     const res = await this.fetchImpl(this.url('/transcribe'), {
       method: 'POST',
       headers: { ...this.headers },

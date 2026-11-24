@@ -19,6 +19,9 @@ export interface UiMessage extends ChatMessage {
   /** POST failed — renders a retry affordance; retry(client_id) resends
    * with the same idempotency key. */
   failed?: boolean;
+  /** Local-only: the picked file behind a failed attachment send —
+   * retry() re-runs the upload. Never wire data. */
+  uploadFile?: UploadFile;
 }
 
 export interface StoreState {
@@ -277,6 +280,7 @@ export class ChatStore {
     local.pending = true;
     local.failed = false;
     this.emit();
+    if (local.uploadFile) return this.attemptAttachment(local, clientId);
     try {
       await this.chat.send(local.text ?? '', { clientId });
       local.pending = false;
@@ -350,10 +354,52 @@ export class ChatStore {
     await this.refresh();
   }
 
-  /** Upload then send — for attach flows wired to the app's picker. */
+  /** Upload then send — optimistic like send(): the row renders the
+   * picked file immediately and flags failed (retryable) if the upload
+   * or POST throws, rather than rejecting the caller's promise. */
   async sendAttachment(file: UploadFile, text = ''): Promise<UiMessage> {
-    const attachment = await this.chat.upload(file);
-    return this.send(text, { attachments: [attachment] });
+    const clientId = randId(40);
+    const f = file as { uri?: string; name?: string; type?: string };
+    const local: UiMessage = {
+      id: `local_${clientId}`,
+      direction: 'in',
+      text,
+      created_at: new Date().toISOString(),
+      client_id: clientId,
+      pending: true,
+      uploadFile: file,
+      attachments: [
+        {
+          name: f.name ?? 'attachment',
+          url: f.uri ?? '',
+          type: f.type ?? 'application/octet-stream',
+          size: 0,
+        },
+      ],
+    };
+    this.unconfirmed.set(clientId, local);
+    this.state = this.state === 'new' ? 'active' : this.state;
+    this.emit();
+    await this.attemptAttachment(local, clientId);
+    return local;
+  }
+
+  /** The upload+send leg of an attachment — shared by sendAttachment
+   * and retry(). */
+  private async attemptAttachment(local: UiMessage, clientId: string): Promise<void> {
+    try {
+      const attachment = await this.chat.upload(local.uploadFile!);
+      await this.chat.send(local.text ?? '', { attachments: [attachment], clientId });
+      local.pending = false;
+      local.attachments = [attachment]; // swap the local-uri preview for the server ref
+      this.emit();
+      setTimeout(() => void this.refresh(), 700);
+    } catch (e) {
+      local.pending = false;
+      local.failed = true;
+      this.lastError = e instanceof Error ? e.message : String(e);
+      this.emit();
+    }
   }
 
   /** Customer-initiated end — archives the thread server-side. */

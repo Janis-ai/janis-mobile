@@ -52,6 +52,18 @@ export interface ChatStoreOptions {
 
 type Listener = (state: StoreState) => void;
 
+/** Agent-side messages the visitor hasn't seen — pending/failed locals,
+ * inbound echoes, and stored greeting rows don't count. `seenAt` is the
+ * created_at of the newest message rendered while the chat was open. */
+export function countUnread(messages: UiMessage[], seenAt: string | null): number {
+  let n = 0;
+  for (const m of messages) {
+    if (m.direction === 'in' || m.pending || m.failed || m.greeting) continue;
+    if (seenAt == null || m.created_at > seenAt) n++;
+  }
+  return n;
+}
+
 const MAX_BACKOFF_MS = 30_000;
 
 /**

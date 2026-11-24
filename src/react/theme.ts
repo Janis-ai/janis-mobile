@@ -20,20 +20,38 @@ export interface ChatTheme {
   radius: number;
 }
 
-export function defaultTheme(accent?: string | null, overrides?: Partial<ChatTheme>): ChatTheme {
+export type ChatScheme = 'light' | 'dark' | 'auto';
+
+const DARK: Omit<ChatTheme, 'accent' | 'accentText' | 'userBubble' | 'userText' | 'radius'> = {
+  background: '#17171c',
+  agentBubble: '#2a2a32',
+  agentText: '#f2f2f5',
+  border: '#35353d',
+  muted: '#9a9aa3',
+  composerBg: '#1e1e24',
+  inputBg: '#26262e',
+  danger: '#f87171',
+};
+
+export function defaultTheme(
+  accent?: string | null,
+  overrides?: Partial<ChatTheme>,
+  scheme: ChatScheme = 'light',
+): ChatTheme {
+  const darkBase = scheme === 'dark' ? DARK : null;
   const base: ChatTheme = {
     accent: accent || '#4f46e5',
     accentText: '#ffffff',
-    background: '#ffffff',
-    agentBubble: '#f1f1f4',
-    agentText: '#17171c',
+    background: darkBase?.background ?? '#ffffff',
+    agentBubble: darkBase?.agentBubble ?? '#f1f1f4',
+    agentText: darkBase?.agentText ?? '#17171c',
     userBubble: accent || '#4f46e5',
     userText: '#ffffff',
-    border: '#e5e5ea',
-    muted: '#8e8e96',
-    composerBg: '#ffffff',
-    inputBg: '#f4f4f6',
-    danger: '#dc2626',
+    border: darkBase?.border ?? '#e5e5ea',
+    muted: darkBase?.muted ?? '#8e8e96',
+    composerBg: darkBase?.composerBg ?? '#ffffff',
+    inputBg: darkBase?.inputBg ?? '#f4f4f6',
+    danger: darkBase?.danger ?? '#dc2626',
     radius: 18,
   };
   const merged = { ...base, ...(overrides ?? {}) };

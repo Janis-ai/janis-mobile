@@ -17,23 +17,51 @@ The package has two entry points:
   components (bubbles, quick replies, option/card widgets, typing dots,
   composer).
 
-## Quick start — drop-in chat screen
+## Quick start — floating chat bubble
 
 ```tsx
-import { ChatView } from 'janis-mobile/react';
+import { ChatBubble } from 'janis-mobile/react';
 
 const chat = { token: 'your-webchat-channel-id' }; // from the channel's embed snippet
 
+export function HomeScreen() {
+  return (
+    <View style={{ flex: 1 }}>
+      {/* your app content */}
+      <ChatBubble chat={chat} />
+    </View>
+  );
+}
+```
+
+`ChatBubble` is the Intercom-style experience: a corner launcher (the
+channel's configured accent/icon/position), an unread badge, the proactive
+teaser, and an open window with a minimize button — tap the launcher or
+the ⌄ header button to collapse back. All console config applies: accent,
+logo, launcher (`glyph`/`logo`/custom image), `position`, `display`
+(`bubble` card vs `modal` sheet), `open_default`, `theme`
+(light/dark/match-OS), `help_url`, `hide_powered_by`, proactive teaser.
+
+```tsx
+const ref = useRef<ChatBubbleHandle>(null);
+<ChatBubble
+  ref={ref}
+  chat={chat}
+  offset={64}             // clear a tab bar
+  onOpenChange={(o) => track(o ? 'chat_opened' : 'chat_minimized')}
+/>
+ref.current.open(); ref.current.minimize(); ref.current.toggle();
+```
+
+Or a full-screen chat route instead — `ChatView` is the same window
+content without the launcher:
+
+```tsx
+import { ChatView } from 'janis-mobile/react';
 export function SupportScreen() {
   return <ChatView chat={chat} onAttach={pickFile} />;
 }
 ```
-
-`ChatView` renders the whole thread — transcript, greeting, typing
-indicators, composer — and handles optimistic sends, retries, history
-paging, and live polling. Wire your own navigation header around it. The
-channel's configured accent colors the bubbles; override with `accent` or
-`theme`.
 
 ## Keeping the conversation across launches
 

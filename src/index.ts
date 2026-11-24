@@ -1,6 +1,6 @@
 export { JanisChat, JanisApiError } from './client.js';
 export type { JanisChatOptions } from './client.js';
-export { ChatStore } from './store.js';
+export { ChatStore, countUnread } from './store.js';
 export type { ChatStoreOptions, StoreState, UiMessage } from './store.js';
 export { randId } from './id.js';
 export type {

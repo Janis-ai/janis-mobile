@@ -84,13 +84,29 @@ export interface ChatConfig {
   position: 'left' | 'right';
   display: 'bubble' | 'modal';
   logo_url: string | null;
+  /** Logo tile branding — padding/corner-radius/outline, like the web header. */
+  logo_padding: number | null;
+  logo_radius: number | null;
+  logo_border_width: number | null;
+  logo_border_color: string | null;
   radius: number | null;
+  /** Launcher icon: 'glyph'/'' = default chat glyph, 'logo' = logo_url,
+   * anything else = a custom image URL. */
+  launcher: string | null;
+  /** Open the chat on load without a launcher tap. */
+  open_default: boolean;
+  /** Proactive teaser above the launcher for brand-new visitors. */
+  proactive: boolean;
+  proactive_delay: number;
+  teaser_text: string | null;
   quick_replies: QuickReply[];
   help_url: string | null;
   show_help_link: boolean;
   help_suggestions: { title: string; url: string }[];
+  /** 'light' | 'dark' | 'auto' (match OS). */
   theme: string;
   hide_powered_by: boolean;
+  sound: boolean;
   dictation: boolean;
   dictation_engine: 'llm' | 'browser';
   font_family: string | null;

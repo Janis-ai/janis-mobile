@@ -47,6 +47,14 @@ export interface JanisChatOptions {
 const STORAGE_KEY = 'janis.visitorId';
 const TYPING_THROTTLE_MS = 3000;
 
+/** Resolve a config/upload asset URL — `/uploads/…` paths are API-relative,
+ * `//cdn…` lifts to https (widget.js's imgSrc rule). */
+export function absoluteUrl(baseUrl: string, url: string | null | undefined): string | null {
+  if (!url) return null;
+  if (url.startsWith('//')) return `https:${url}`;
+  return url.startsWith('/') ? `${baseUrl}${url}` : url;
+}
+
 const memoryStorage: VisitorStorage = (() => {
   const map = new Map<string, string>();
   return {

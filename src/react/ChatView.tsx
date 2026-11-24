@@ -7,6 +7,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  useColorScheme,
   View,
   type StyleProp,
   type ViewStyle,
@@ -18,7 +19,7 @@ import type { UploadFile } from '../types.js';
 import { Composer } from './Composer.js';
 import { MessageRow } from './MessageRow.js';
 import { TypingDots } from './TypingDots.js';
-import { defaultTheme, type ChatTheme } from './theme.js';
+import { defaultTheme, type ChatScheme, type ChatTheme } from './theme.js';
 import { useJanisChat } from './useJanisChat.js';
 import type { ReactNode } from 'react';
 
@@ -30,6 +31,8 @@ export interface ChatViewProps {
   theme?: Partial<ChatTheme>;
   /** Accent override — wins over the channel's configured accent. */
   accent?: string;
+  /** 'light' | 'dark' | 'auto' (match OS). Default: the channel's theme. */
+  scheme?: ChatScheme;
   placeholder?: string;
   style?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;
@@ -56,7 +59,14 @@ export interface ChatViewProps {
  */
 export function ChatView(props: ChatViewProps) {
   const j = useJanisChat(props.chat, props.storeOptions);
-  const theme = defaultTheme(props.accent ?? (j.config?.accent as string | null), props.theme);
+  const os = useColorScheme();
+  const cfgScheme = (props.scheme ?? j.config?.theme) as ChatScheme | undefined;
+  const scheme = cfgScheme === 'auto' ? (os === 'dark' ? 'dark' : 'light') : cfgScheme;
+  const theme = defaultTheme(
+    props.accent ?? (j.config?.accent as string | null),
+    props.theme,
+    scheme ?? 'light',
+  );
 
   const messages = useMemo(() => {
     const msgs = [...j.messages];

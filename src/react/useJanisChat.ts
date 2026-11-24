@@ -4,6 +4,10 @@ import { ChatStore, type ChatStoreOptions, type StoreState, type UiMessage } fro
 import type { ChatUser, QuickReply, SendOptions, TapMeta, UploadFile } from '../types.js';
 
 export interface UseJanisChatResult extends StoreState {
+  /** The resolved instances — pass `store` to <ChatView chat={store}> to
+   * share one transport/store across composed components. */
+  chat: JanisChat;
+  store: ChatStore;
   send(text: string, opts?: SendOptions): Promise<UiMessage>;
   sendTap(text: string, tap: TapMeta): Promise<UiMessage>;
   /** A string quick-reply chip — sent as a component tap, not typed text. */
@@ -49,6 +53,8 @@ export function useJanisChat(
 
   return {
     ...state,
+    chat: store.chat,
+    store,
     send: (text, opts) => store.send(text, opts),
     sendTap: (text, tap) => store.sendTap(text, tap),
     sendQuickReply: (reply) => store.sendTap(reply, {}),

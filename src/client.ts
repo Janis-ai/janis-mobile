@@ -272,7 +272,13 @@ export class JanisChat {
         type: f.type ?? 'application/octet-stream',
       } as unknown as Blob);
     } else {
-      fd.append('file', file as unknown as Blob, f.name ?? 'upload');
+      // RN's FormData type only declares 2-arg append; runtimes accept
+      // (name, blob, filename) like the web.
+      (fd.append as (n: string, v: unknown, filename?: string) => void)(
+        'file',
+        file,
+        f.name ?? 'upload',
+      );
     }
     const res = await this.fetchImpl(this.url('/uploads'), {
       method: 'POST',

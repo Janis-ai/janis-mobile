@@ -119,13 +119,13 @@ export function ChatView(props: ChatViewProps) {
             <View style={styles.typing}>
               <TypingDots theme={theme} />
             </View>
-          ) : null
+          ) : undefined
         }
         ListFooterComponent={
-          j.hasMore ? <ActivityIndicator style={styles.more} color={theme.muted} /> : null
+          j.hasMore ? <ActivityIndicator style={styles.more} color={theme.muted} /> : undefined
         }
         ListEmptyComponent={
-          j.ready && !j.config?.greeting ? <>{props.emptyState ?? null}</> : null
+          j.ready && !j.config?.greeting ? <>{props.emptyState ?? null}</> : undefined
         }
         onEndReached={() => {
           if (j.hasMore) void j.loadMore();

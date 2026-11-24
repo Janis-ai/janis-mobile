@@ -117,6 +117,9 @@ const onAttach = async () => {
 
 - The channel id **is** the credential — safe to ship in the app binary.
   Visitor ids are transcript keys, not secrets.
+- The package ships compiled `dist/` — in a monorepo, rebuild it after
+  SDK edits before bundling (`npm run build -w packages/mobile`; the
+  demo app's `ios`/`android`/`start` scripts chain this).
 - Form / status / receipt / pricing / cart widgets pass through on
   `message.widgets` but aren't rendered by `ChatView` yet — render them
   via `renderMessage`.

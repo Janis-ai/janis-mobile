@@ -177,7 +177,7 @@ describe('JanisChat', () => {
     const ref = await chat.upload({ uri: 'file:///tmp/pic.png', name: 'pic.png', type: 'image/png' });
     expect(ref.url).toBe('https://api.test/uploads/pic.png');
     expect(calls[0].method).toBe('POST');
-    const fd = calls[0].body as FormData;
+    const fd = calls[0].body as unknown as { get(k: string): unknown };
     expect(fd.get('visitor_id')).toBe('v_test_visitor_123');
     expect(fd.get('file')).toBeTruthy();
   });

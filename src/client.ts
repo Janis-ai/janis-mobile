@@ -335,8 +335,9 @@ export class JanisChat {
       const text = (await res.text().catch(() => '')).slice(0, 300);
       throw new JanisApiError(res.status, text, Number.isFinite(retry) && retry > 0 ? retry : undefined);
     }
-    const ref = (await res.json()) as Attachment;
-    return { ...ref, url: ref.url.startsWith('/') ? `${this.baseUrl}${ref.url}` : ref.url };
+    // The ref's url stays relative — POST /messages' attachment schema
+    // requires a /^\/uploads\// path. Display code absolutizes.
+    return (await res.json()) as Attachment;
   }
 
   /** Server-side dictation — requires the channel's dictation flag. */

@@ -1,4 +1,4 @@
-import { JanisChat } from './client.js';
+import { absoluteUrl, JanisChat } from './client.js';
 import { randId } from './id.js';
 import type {
   ChatConfig,
@@ -391,7 +391,11 @@ export class ChatStore {
       const attachment = await this.chat.upload(local.uploadFile!);
       await this.chat.send(local.text ?? '', { attachments: [attachment], clientId });
       local.pending = false;
-      local.attachments = [attachment]; // swap the local-uri preview for the server ref
+      // Swap the local-uri preview for the server ref — absolutized for
+      // display only; the wire send above needs the /uploads/ path.
+      local.attachments = [
+        { ...attachment, url: absoluteUrl(this.chat.baseUrl, attachment.url) ?? attachment.url },
+      ];
       this.emit();
       setTimeout(() => void this.refresh(), 700);
     } catch (e) {
